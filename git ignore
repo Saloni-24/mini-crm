@@ -1,0 +1,12 @@
+# Node modules
+node_modules/
+
+# dotenv
+.env
+
+# logs
+*.log
+
+# system files
+.DS_Store
+Thumbs.db
