@@ -5,6 +5,9 @@ const dotenv = require("dotenv");
 // MongoDB connection file import//
  const connectDB = require("./db/connect");
 
+ //userRouter file import
+ const userRouter = require("./routes/userRoutes");
+
 // loading.env file
 dotenv.config();
 
@@ -16,6 +19,13 @@ const app = express();
 
 // Middleware to parse JSON data
 app.use(express.json());
+
+// Use user routes under /api/auth
+app.use("/api/auth", userRouter); // ✅ route use
+
+
+// importing user related functions 
+//const userHandlers = require('../handlers/userHandlers');//
 
 
 // Port number loaded env file or by default 5000
