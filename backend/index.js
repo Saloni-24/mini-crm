@@ -8,6 +8,11 @@ const dotenv = require("dotenv");
  //userRouter file import
  const userRouter = require("./routes/userRoutes");
 
+ const customerRoutes = require('./routes/customerRoutes');
+
+ const orderRoutes = require('./routes/orderRoutes');
+
+
 // loading.env file
 dotenv.config();
 
@@ -21,7 +26,11 @@ const app = express();
 app.use(express.json());
 
 // Use user routes under /api/auth
-app.use("/api/auth", userRouter); // ✅ route use
+app.use("/api/auth", userRouter); // route use
+
+app.use('/api/customers', customerRoutes); 
+
+app.use('/api/orders', orderRoutes);
 
 
 // importing user related functions 

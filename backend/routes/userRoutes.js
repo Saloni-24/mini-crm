@@ -21,18 +21,18 @@ router.post('/login', (req, res) => {
 });
 
 // when we have to get list of all users
-router.get('/', (req, res) => {
+router.get('/',protect, (req, res) => {
   userHandlers.showUsers(req, res);
 });
 
-// ✅ Protected Route: Normal user dashboard
+//  Protected Route: Normal user dashboard
 router.get("/dashboard", protect, (req, res) => {
   res.json({ msg: `Hello ${req.user.username} ! Welcome to dashboard.` });
 });
 
-// ✅ Admin-only Route: Admin panel
+//  Admin-only Route: Admin panel
 router.get("/admin", protect, isAdmin, (req, res) => {
-  res.json({ msg: "🛡️ Welcome Admin, this is your panel." });
+  res.json({ msg: "Welcome Admin, this is your panel." });
 });
 
 
