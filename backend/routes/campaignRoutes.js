@@ -1,12 +1,31 @@
 const express = require('express');
 const router = express.Router();
 
-const { createCampaign, listCampaigns } = require('../handlers/campaignHandlers');
-const { protect } = require('../middleware/authmiddleware'); 
+const {
+  createCampaign,
+  listCampaigns,
+  previewCampaign,
+  sendCampaign,
+  getAllCampaigns
+} = require('../handlers/campaignHandlers');
 
+const { protect } = require('../middleware/authmiddleware');
+
+// Campaign create route
 router.post('/create', protect, createCampaign);
+
+// List campaigns (old route)
 router.get('/list', protect, listCampaigns);
 
-console.log('campaign route ready');
+// New route for previewing audience size
+router.post('/preview', protect, previewCampaign);
+
+// New route for sending campaign by id
+router.post('/:id/send', protect, sendCampaign);
+
+// New route for getting all campaigns 
+router.get('/', protect, getAllCampaigns);
+
+console.log('Campaign routes ready!');
 
 module.exports = router;

@@ -33,7 +33,7 @@ app.use(cors());
 app.use("/api/auth", userRouter);      // User auth routes
 app.use('/api/customers', customerRoutes); 
 app.use('/api/orders', orderRoutes);
-app.use('/api/campaign', campaignRoutes);  // Campaign routes
+app.use('/api/campaigns', campaignRoutes);  // Campaign routes
 
 // function to check server
 app.get("/", (req, res) => {
