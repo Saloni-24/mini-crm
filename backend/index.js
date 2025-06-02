@@ -1,51 +1,47 @@
 // Required modules 
 const express = require("express");
 const dotenv = require("dotenv");
+const helmet = require("helmet");   //secures  app by setting HTTP headers
+const cors = require("cors");    //It allows frontend app to access backend APIs safely  
 
-// MongoDB connection file import//
- const connectDB = require("./db/connect");
+// MongoDB connection 
+const connectDB = require("./db/connect");
 
- //userRouter file import
- const userRouter = require("./routes/userRoutes");
+// Route files import
+const userRouter = require("./routes/userRoutes");
+const customerRoutes = require('./routes/customerRoutes');
+const orderRoutes = require('./routes/orderRoutes');
+const campaignRoutes = require('./routes/campaignRoutes');  // Campaign routes
 
- const customerRoutes = require('./routes/customerRoutes');
-
- const orderRoutes = require('./routes/orderRoutes');
-
-
-// loading.env file
+// Loading env variables
 dotenv.config();
 
-// Connect to MongoDB
+// Connection to MongoDB
 connectDB();
 
-// creating an express app
+// Creation of express app
 const app = express();
 
 // Middleware to parse JSON data
 app.use(express.json());
 
-// Use user routes under /api/auth
-app.use("/api/auth", userRouter); // route use
+// using  helmet and cors middleware
+app.use(helmet());
+app.use(cors());
 
+// Using routes
+app.use("/api/auth", userRouter);      // User auth routes
 app.use('/api/customers', customerRoutes); 
-
 app.use('/api/orders', orderRoutes);
+app.use('/api/campaign', campaignRoutes);  // Campaign routes
 
-
-// importing user related functions 
-//const userHandlers = require('../handlers/userHandlers');//
-
-
-// Port number loaded env file or by default 5000
-const PORT = process.env.PORT || 5000;
-
-// Basic route created to check server
+// function to check server
 app.get("/", (req, res) => {
-  res.send("Hello! Mini CRM backend is running fine ");
+  res.send("Hello! Mini CRM backend is running fine");
 });
 
-// starting the server
+//  server started
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log("🎉 Server is running  -> http://localhost:" + PORT);
+  console.log("🎉 Server is running -> http://localhost:" + PORT);
 });
