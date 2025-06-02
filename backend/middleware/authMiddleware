@@ -1,9 +1,10 @@
 const jwt = require("jsonwebtoken");
 
-//  to Check if token is valid (login proof)
+// Check if the user is logged in using token
 const protect = (req, res, next) => {
   const tokenHeader = req.headers.authorization;
 
+  // If no token or wrong format
   if (!tokenHeader || !tokenHeader.startsWith("Bearer ")) {
     console.log(" Token is missing or format is wrong");
     return res.status(401).json({ message: "Login first! Token is required 🪪" });
@@ -12,8 +13,10 @@ const protect = (req, res, next) => {
   const token = tokenHeader.split(" ")[1];
 
   try {
+    // Verify the token using secret key
     const decodedUser = jwt.verify(token, process.env.JWT_SECRET );
 
+    // Save user data in request
     req.user = decodedUser;
     console.log(" Token verified, user is:", decodedUser.username);
     next();
@@ -23,7 +26,7 @@ const protect = (req, res, next) => {
   }
 };
 
-// Middleware: Check if user is admin
+// Check if the user is an admin
 const isAdmin = (req, res, next) => {
   if (req.user && req.user.role === "admin") {
     console.log(" Admin access approved ");

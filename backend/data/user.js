@@ -1,25 +1,25 @@
- const mongoose = require('mongoose');
+const mongoose = require('mongoose');
+
 const userSchema = new mongoose.Schema({
-  name: {
+  googleId: {
     type: String,
-    required: [true, "Please enter the customer name."],
+    unique: true,
+    sparse: true, // allow nulls for non-google users
   },
   email: {
     type: String,
-    required: [true, "Email is required."],
+    required: function() {
+      return !this.googleId;  // required if no googleId
+    },
     unique: true,
   },
   password: {
     type: String,
-    required: [true, "Password cannot be  empty."],
+    required: function() {
+      return !this.googleId;  // required if no googleId (i.e. normal signup)
+    },
   },
-  role: {
-    type: String,
-    enum: ["user", "admin"],
-    default: "user",
-  },
+  name: String,
 });
 
-const User = mongoose.model('User', userSchema);
-
-module.exports = User;
+module.exports = mongoose.model('User', userSchema);
