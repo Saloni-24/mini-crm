@@ -1,5 +1,7 @@
+const axios = require('axios');
 const Campaign = require('../data/campaign');
 const Customer = require('../data/customer');
+const DeliveryLog = require('../data/deliveryLog');
 
 // Helper function to convert rules into MongoDB query filter with logic (AND/OR)
 const buildFilter = (rules, logic = 'AND') => {
@@ -11,12 +13,12 @@ const buildFilter = (rules, logic = 'AND') => {
     .map(rule => {
       let operatorMongo;
       switch (rule.operator) {
-        case ">": operatorMongo = "$gt"; break;
-        case "<": operatorMongo = "$lt"; break;
-        case ">=": operatorMongo = "$gte"; break;
-        case "<=": operatorMongo = "$lte"; break;
-        case "==": operatorMongo = "$eq"; break;
-        case "!=": operatorMongo = "$ne"; break;
+        case '>': operatorMongo = '$gt'; break;
+        case '<': operatorMongo = '$lt'; break;
+        case '>=': operatorMongo = '$gte'; break;
+        case '<=': operatorMongo = '$lte'; break;
+        case '==': operatorMongo = '$eq'; break;
+        case '!=': operatorMongo = '$ne'; break;
         default: return null; // unsupported operator
       }
 
@@ -31,6 +33,18 @@ const buildFilter = (rules, logic = 'AND') => {
   else return { $and: conditions }; // fallback default
 };
 
+const createDeliveryLogs = async (campaignId, customers) => {
+  if (!customers.length) return;
+
+  const logs = customers.map(cust => ({
+    campaignId,
+    customerId: cust._id,
+    status: 'PENDING',
+  }));
+
+  await DeliveryLog.insertMany(logs);
+};
+
 const createCampaign = async (req, res) => {
   try {
     const { name, rules, message, logic } = req.body;
@@ -43,7 +57,6 @@ const createCampaign = async (req, res) => {
       return res.status(400).json({ msg: 'Rules must be a non-empty array' });
     }
 
-    // Validate each rule has required fields
     for (const rule of rules) {
       if (!rule.field || !rule.operator || rule.value === undefined) {
         return res.status(400).json({ msg: 'Each rule must have field, operator, and value' });
@@ -70,6 +83,8 @@ const createCampaign = async (req, res) => {
 
     await newCampaign.save();
 
+    await createDeliveryLogs(newCampaign._id, customers);
+
     console.log(`[ Campaign Created ] Name: ${name} | Audience: ${customers.length} | Rules: ${rules.length}`);
     res.status(201).json({ msg: 'Campaign created', campaign: newCampaign });
   } catch (err) {
@@ -78,88 +93,83 @@ const createCampaign = async (req, res) => {
   }
 };
 
-const listCampaigns = async (req, res) => {
-  try {
-    const campaigns = await Campaign.find().sort({ createdAt: -1 });
-    console.log('Loaded all campaigns');
-    res.status(200).json({ campaigns });
-  } catch (err) {
-    console.log('Error while loading campaigns:', err.message);
-    res.status(500).json({ msg: 'Trouble in server' });
-  }
-};
-
-// POST /campaigns/preview
-const previewCampaign = async (req, res) => {
-  try {
-    const { rules, logic } = req.body;
-
-    if (!rules || !Array.isArray(rules) || !logic) {
-      return res.status(400).json({ msg: 'Rules and logic required' });
-    }
-
-    if (!['AND', 'OR'].includes(logic)) {
-      return res.status(400).json({ msg: "Logic must be 'AND' or 'OR'" });
-    }
-
-    const filter = buildFilter(rules, logic);
-    const audienceSize = await Customer.countDocuments(filter);
-
-    res.status(200).json({ audienceSize });
-  } catch (err) {
-    console.log('Error in previewCampaign:', err.message);
-    res.status(500).json({ msg: 'Server error in preview' });
-  }
-};
-
-// POST /campaigns/:id/send
 const sendCampaign = async (req, res) => {
   try {
     const { id } = req.params;
-
     const campaign = await Campaign.findById(id);
     if (!campaign) return res.status(404).json({ msg: 'Campaign not found' });
 
     const filter = buildFilter(campaign.rules, campaign.logic);
     const customers = await Customer.find(filter);
 
-    // Simulate sending: all succeed, failed = 0
-    const sent = customers.length;
-    const failed = 0;
+    if (customers.length === 0) {
+      return res.status(400).json({ msg: 'No customers found for this campaign' });
+    }
+
+    let sentCount = 0;
+    let failedCount = 0;
+
+    for (const cust of customers) {
+      const personalizedMessage = `Hi ${cust.name}, ${campaign.message}`;
+
+      const isSent = Math.random() < 0.9;
+
+      await axios.post('http://localhost:5000/api/delivery-receipts', {
+        campaignId: campaign._id,
+        customerId: cust._id,
+        status: isSent ? 'SENT' : 'FAILED',
+        message: personalizedMessage,
+      });
+
+      if (isSent) sentCount++;
+      else failedCount++;
+    }
 
     campaign.status = 'SENT';
-    campaign.sent = sent;
-    campaign.failed = failed;
+    campaign.sent = sentCount;
+    campaign.failed = failedCount;
     campaign.deliveredAt = new Date();
 
     await campaign.save();
 
-    console.log(`Campaign "${campaign.name}" sent to ${sent} customers.`);
-    res.status(200).json({ msg: 'Campaign delivered', sent, failed });
-  } catch (err) {
-    console.log('Error in sendCampaign:', err.message);
+    res.status(200).json({
+      msg: 'Campaign messages sent (simulation)',
+      sent: sentCount,
+      failed: failedCount,
+    });
+  } catch (error) {
+    console.error('sendCampaign error:', error.message);
     res.status(500).json({ msg: 'Server error sending campaign' });
   }
 };
 
-// GET /campaigns/all - summary list
+const listCampaigns = async (req, res) => {
+  try {
+    const campaigns = await Campaign.find();
+    res.status(200).json({ campaigns });
+  } catch (err) {
+    res.status(500).json({ msg: 'Failed to fetch campaigns' });
+  }
+};
+
+const previewCampaign = (req, res) => {
+  // Just send dummy preview, customize as needed
+  res.status(200).json({ preview: 'This is a campaign preview' });
+};
+
 const getAllCampaigns = async (req, res) => {
   try {
-    const campaigns = await Campaign.find({})
-      .sort({ createdAt: -1 })
-      .select('name status audienceSize sent failed createdAt');
-
-    res.status(200).json(campaigns);
-  } catch (err) {
-    console.log('Error in getAllCampaigns:', err.message);
-    res.status(500).json({ msg: 'Server error fetching campaigns' });
+    const campaigns = await Campaign.find();
+    res.status(200).json({ campaigns });
+  } catch (error) {
+    res.status(500).json({ msg: 'Error fetching campaigns' });
   }
 };
 
 module.exports = {
   createCampaign,
+  sendCampaign,
   listCampaigns,
   previewCampaign,
-  sendCampaign,
   getAllCampaigns,
 };

@@ -14,7 +14,8 @@ const userRouter = require("./routes/userRoutes");
 const customerRoutes = require('./routes/customerRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const campaignRoutes = require('./routes/campaignRoutes');  // Campaign routes
-const authRoutes = require('./routes/googleAuthRoutes');  // Google OAuth routes
+const authRoutes = require('./routes/googleAuthRoutes');    // Google OAuth routes
+const deliveryReceiptRoutes = require('./routes/deliveryReceipt');  
 
 // Loading env variables
 dotenv.config();
@@ -31,6 +32,11 @@ app.use(express.json());
 // using helmet and cors middleware
 app.use(helmet());
 app.use(cors());
+
+// Using delivery receipt route
+
+app.use('/api/delivery-receipts', deliveryReceiptRoutes);
+
 
 // EXPRESS SESSION SETUP FOR Google OAuth 
 // This is needed so passport can keep user info in session
@@ -58,7 +64,6 @@ app.get("/", (req, res) => {
 });
 
 //  routes added below for login & dashboard testing with OAuth
-
 app.get('/login', (req, res) => {
   res.send('Login failed, please try again or use another account.');
 });

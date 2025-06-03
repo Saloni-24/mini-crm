@@ -6,10 +6,13 @@ const {
   listCampaigns,
   previewCampaign,
   sendCampaign,
-  getAllCampaigns
+  getAllCampaigns,
 } = require('../handlers/campaignHandlers');
 
 const { protect } = require('../middleware/authmiddleware');
+
+// Import delivery log handler
+const { getDeliveryLogsByCampaign } = require('../handlers/campaignDeliveryHandler');
 
 // Campaign create route
 router.post('/create', protect, createCampaign);
@@ -25,6 +28,9 @@ router.post('/:id/send', protect, sendCampaign);
 
 // New route for getting all campaigns 
 router.get('/', protect, getAllCampaigns);
+
+// New route: Get delivery logs for a campaign
+router.get('/:id/delivery-logs', protect, getDeliveryLogsByCampaign);
 
 console.log('Campaign routes ready!');
 
