@@ -1,68 +1,39 @@
-// src/context/AuthContext.js
-import { createContext, useContext, useState, useEffect } from "react";
-import { jwtDecode } from 'jwt-decode';
-
+import React, { createContext, useState, useEffect, useContext } from "react";
 
 const AuthContext = createContext();
-let logoutTimer = null;
 
-export function AuthProvider({ children }) {
+export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState(null);
-
-  const setLogoutTimer = (exp) => {
-    const expiryTimeInMs = exp * 1000 - Date.now();
-    if (expiryTimeInMs > 0) {
-      logoutTimer = setTimeout(() => {
-        logout();
-        alert("Session expired. Please log in again.");
-      }, expiryTimeInMs);
-    }
-  };
-
-  const login = (token) => {
-    localStorage.setItem("token", token);
-    const decoded = jwtDecode(token);
-
-    setUser(decoded);
-    setIsAuthenticated(true);
-    setLogoutTimer(decoded.exp); // setup auto logout
-  };
-
-  const logout = () => {
-    localStorage.removeItem("token");
-    setUser(null);
-    setIsAuthenticated(false);
-    if (logoutTimer) clearTimeout(logoutTimer);
-  };
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (token) {
-      try {
-        const decoded = jwtDecode(token);
-        if (decoded.exp * 1000 < Date.now()) {
-          logout(); // token already expired
-        } else {
-          setUser(decoded);
-          setIsAuthenticated(true);
-          setLogoutTimer(decoded.exp);
-        }
-      } catch (err) {
-        console.error("Invalid token", err);
-        logout();
-      }
-    }
-    // eslint-disable-next-line
+    setIsAuthenticated(!!token);
   }, []);
 
+  // **login function add karo yahan**
+  const login = (token) => {
+    localStorage.setItem("token", token);
+    setIsAuthenticated(true);
+  };
+
+  // optional logout function bhi add kar sakte ho
+  const logout = () => {
+    localStorage.removeItem("token");
+    setIsAuthenticated(false);
+  };
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout, user }}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated,
+        setIsAuthenticated,
+        login,      // login function provide karo
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
-export function useAuth() {
-  return useContext(AuthContext);
-}
+export const useAuth = () => useContext(AuthContext);
